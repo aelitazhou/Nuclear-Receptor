@@ -1,9 +1,0 @@
-/scratch/user/zhoufangtong/.conda/envs/zft/lib/python3.6/site-packages/sklearn/ensemble/weight_boosting.py:29: DeprecationWarning: numpy.core.umath_tests is an internal NumPy module and should not be imported. It will be removed in a future NumPy release.
-  from numpy.core.umath_tests import inner1d
-(3711, 512) (3711, 512)
-(1, 1)
-(10, 0.01)
-100
-1500
-3
-3
