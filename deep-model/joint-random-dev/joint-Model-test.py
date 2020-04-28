@@ -218,11 +218,23 @@ def diagnosis(l_true, l_pred):
                 pred.append(j)
     a = confusion_matrix(true, pred)
     print(a)
-    acc = []
+    r = []
     for i in range(a.shape[0]):
-        acc.append(a[i, i]/np.sum(a[i, :]))
-    print(acc)
-    print(np.mean(acc))
+        r.append(a[i, i]/np.sum(a[i, :]))
+    p = []
+    for i in range(a.shape[0]):
+        p.append(a[i, i]/np.sum(a[:, i]))
+    f1 = []
+    for i in range(a.shape[0]):
+        f1.append(2*(p[i]*r[i])/(p[i]+r[i]))
+    print('recall and mean')
+    print(r, np.mean(r))
+    print('precision and mean')
+    print(p, np.mean(p))
+    print('f1 score for each class and mean')
+    print(f1, np.mean(f1))
+    print('f1 score macro')
+    print(f1_score(l_true, l_pred, average='macro'))
 
 
 ################ Reading initial states and weigths 
@@ -320,21 +332,21 @@ compound_train, compound_dev, IC50_train, IC50_dev, protein_train, protein_dev =
 ## RNN for protein
 prot_data = input_data(shape=[None, protein_MAX_size])
 prot_embd = tflearn.embedding(prot_data, input_dim=vocab_size_protein, output_dim=GRU_size_prot)
-prot_gru_1 = tflearn.gru(prot_embd, GRU_size_prot,initial_state= prot_init_state_1,trainable=False,return_seq=True,restore=False)
+prot_gru_1 = tflearn.gru(prot_embd, GRU_size_prot,initial_state= prot_init_state_1,trainable=True,return_seq=True,restore=True)
 prot_gru_1 = tf.stack(prot_gru_1,axis=1)
-prot_gru_2 = tflearn.gru(prot_gru_1, GRU_size_prot,initial_state= prot_init_state_2,trainable=False,return_seq=True,restore=False)
+prot_gru_2 = tflearn.gru(prot_gru_1, GRU_size_prot,initial_state= prot_init_state_2,trainable=True,return_seq=True,restore=True)
 prot_gru_2 = tf.stack(prot_gru_2,axis=1)
 
 drug_data = input_data(shape=[None, comp_MAX_size])
 drug_embd = tflearn.embedding(drug_data, input_dim=vocab_size_compound, output_dim=GRU_size_drug)
-drug_gru_1 = tflearn.gru(drug_embd,GRU_size_drug,initial_state= drug_init_state_1,trainable=False,return_seq=True,restore=False)
+drug_gru_1 = tflearn.gru(drug_embd,GRU_size_drug,initial_state= drug_init_state_1,trainable=True,return_seq=True,restore=True)
 drug_gru_1 = tf.stack(drug_gru_1,1)
-drug_gru_2 = tflearn.gru(drug_gru_1, GRU_size_drug,initial_state= drug_init_state_2,trainable=False,return_seq=True,restore=False)
+drug_gru_2 = tflearn.gru(drug_gru_1, GRU_size_drug,initial_state= drug_init_state_2,trainable=True,return_seq=True,restore=True)
 drug_gru_2 = tf.stack(drug_gru_2,axis=1)
 
 
-W = tflearn.variables.variable(name="Attn_W_prot",shape=[GRU_size_prot,GRU_size_drug],initializer=tf.random_normal([GRU_size_prot,GRU_size_drug],stddev=0.1),restore=False)
-b = tflearn.variables.variable(name="Attn_b_prot",shape=[protein_MAX_size,comp_MAX_size],initializer=tf.random_normal([protein_MAX_size,comp_MAX_size],stddev=0.1),restore=False)
+W = tflearn.variables.variable(name="Attn_W_prot",shape=[GRU_size_prot,GRU_size_drug],initializer=tf.random_normal([GRU_size_prot,GRU_size_drug],stddev=0.1),restore=True)
+b = tflearn.variables.variable(name="Attn_b_prot",shape=[protein_MAX_size,comp_MAX_size],initializer=tf.random_normal([protein_MAX_size,comp_MAX_size],stddev=0.1),restore=True)
 alphas_pair = tf.einsum('ij,bki->bkj',W,prot_gru_2)
 alphas_pair = tf.tanh(tf.einsum('bkj,bsj->bks',alphas_pair,drug_gru_2) + b)
 alphas_pair = tflearn.reshape(alphas_pair,[-1,comp_MAX_size*protein_MAX_size])
@@ -342,9 +354,9 @@ alphas_pair = tf.nn.softmax(alphas_pair,name='alphas')
 alphas_pair = tflearn.reshape(alphas_pair,[-1,protein_MAX_size,comp_MAX_size])
 
 U_size = 256
-U_prot = tflearn.variables.variable(name="Attn_U_prot",shape=[U_size,GRU_size_prot],initializer=tf.random_normal([U_size,GRU_size_prot],stddev=0.1),restore=False)
-U_drug = tflearn.variables.variable(name="Attn_U_drug",shape=[U_size,GRU_size_drug],initializer=tf.random_normal([U_size,GRU_size_drug],stddev=0.1),restore=False)
-B = tflearn.variables.variable(name="Attn_B",shape=[U_size],initializer=tf.random_normal([U_size],stddev=0.1),restore=False)
+U_prot = tflearn.variables.variable(name="Attn_U_prot",shape=[U_size,GRU_size_prot],initializer=tf.random_normal([U_size,GRU_size_prot],stddev=0.1),restore=True)
+U_drug = tflearn.variables.variable(name="Attn_U_drug",shape=[U_size,GRU_size_drug],initializer=tf.random_normal([U_size,GRU_size_drug],stddev=0.1),restore=True)
+B = tflearn.variables.variable(name="Attn_B",shape=[U_size],initializer=tf.random_normal([U_size],stddev=0.1),restore=True)
 
 space_1 = tf.einsum('ij,bsj->bsi',U_prot,prot_gru_2)
 space_2 = tf.einsum('ij,bsj->bsi',U_drug,drug_gru_2)
@@ -432,11 +444,11 @@ classification = regression(linear, optimizer='adam', learning_rate=learning_rat
 # Training
 model = tflearn.DNN(classification, tensorboard_verbose=0,tensorboard_dir='./mytensor/',checkpoint_path="./checkpoints/")
 
-#model.load('checkpoints-7500')
+model.load('checkpoints-16500')
 
 #model2 = tflearn.DNN(linear, session = model.session)
 ######### Setting weights
-
+'''
 model.set_weights(prot_gru_1_gate_matrix[0],prot_gru_1_gates_kernel_init)
 model.set_weights(prot_gru_1_gate_bias[0],prot_gru_1_gates_bias_init)
 model.set_weights(prot_gru_1_candidate_matrix[0],prot_gru_1_candidate_kernel_init)
@@ -456,8 +468,8 @@ model.set_weights(drug_gru_2_gate_bias[0],drug_gru_2_gates_bias_init)
 model.set_weights(drug_gru_2_candidate_matrix[0],drug_gru_2_candidate_kernel_init)
 model.set_weights(drug_gru_2_candidate_bias[0],drug_gru_2_candidate_bias_init)
 
-
-
+'''
+'''
 ######## training
 model.fit([train_protein,train_compound], {'target': train_IC50}, n_epoch=300,batch_size=64,
            validation_set=([protein_dev,compound_dev], {'target': IC50_dev}),
@@ -465,27 +477,6 @@ model.fit([train_protein,train_compound], {'target': train_IC50}, n_epoch=300,ba
 
 # saving save
 model.save('my_model')
-
-'''
-print("error on dev")
-size = 64
-length_dev = len(protein_dev)
-print(length_dev)
-num_bins = math.ceil(length_dev/size)
-for i in range(num_bins):
-        if i==0:
-          y_pred = model.predict([protein_dev[0:size],compound_dev[0:size]])
-        elif i < num_bins-1:
-          temp = model.predict([protein_dev[(i*size):((i+1)*size)],compound_dev[(i*size):((i+1)*size)]])
-          y_pred = np.concatenate((y_pred,temp), axis=0)
-        else:
-          temp = model.predict([protein_dev[(i*size):length_dev],compound_dev[(i*size):length_dev]])
-          y_pred = np.concatenate((y_pred,temp), axis=0)
-row = np.arange(length_dev)
-col = np.argmax(y_pred, axis=1)
-data = np.ones(length_dev)
-y_pred_label = coo_matrix((data, (row, col)), shape=y_pred.shape).toarray()
-print(diagnosis(IC50_dev, y_pred_label))
 '''
 print("error on test0")
 size = 64
@@ -572,6 +563,7 @@ col = np.argmax(y_pred, axis=1)
 data = np.ones(length_test3)
 y_pred_label = coo_matrix((data, (row, col)), shape=y_pred.shape).toarray()
 print(diagnosis(test3_IC50, y_pred_label))
+
 
 print("error on train")
 size = 64

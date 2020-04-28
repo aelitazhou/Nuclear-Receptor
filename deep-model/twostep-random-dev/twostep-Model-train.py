@@ -319,16 +319,16 @@ compound_train, compound_dev, IC50_train, IC50_dev, protein_train, protein_dev =
 ## RNN for protein
 prot_data = input_data(shape=[None, protein_MAX_size])
 prot_embd = tflearn.embedding(prot_data, input_dim=vocab_size_protein, output_dim=GRU_size_prot)
-prot_gru_1 = tflearn.gru(prot_embd, GRU_size_prot,initial_state= prot_init_state_1,trainable=True,return_seq=True,restore=False)
+prot_gru_1 = tflearn.gru(prot_embd, GRU_size_prot,initial_state= prot_init_state_1,trainable=False,return_seq=True,restore=False)
 prot_gru_1 = tf.stack(prot_gru_1,axis=1)
-prot_gru_2 = tflearn.gru(prot_gru_1, GRU_size_prot,initial_state= prot_init_state_2,trainable=True,return_seq=True,restore=False)
+prot_gru_2 = tflearn.gru(prot_gru_1, GRU_size_prot,initial_state= prot_init_state_2,trainable=False,return_seq=True,restore=False)
 prot_gru_2 = tf.stack(prot_gru_2,axis=1)
 
 drug_data = input_data(shape=[None, comp_MAX_size])
 drug_embd = tflearn.embedding(drug_data, input_dim=vocab_size_compound, output_dim=GRU_size_drug)
-drug_gru_1 = tflearn.gru(drug_embd,GRU_size_drug,initial_state= drug_init_state_1,trainable=True,return_seq=True,restore=False)
+drug_gru_1 = tflearn.gru(drug_embd,GRU_size_drug,initial_state= drug_init_state_1,trainable=False,return_seq=True,restore=False)
 drug_gru_1 = tf.stack(drug_gru_1,1)
-drug_gru_2 = tflearn.gru(drug_gru_1, GRU_size_drug,initial_state= drug_init_state_2,trainable=True,return_seq=True,restore=False)
+drug_gru_2 = tflearn.gru(drug_gru_1, GRU_size_drug,initial_state= drug_init_state_2,trainable=False,return_seq=True,restore=False)
 drug_gru_2 = tf.stack(drug_gru_2,axis=1)
 
 
@@ -567,7 +567,6 @@ col = np.argmax(y_pred, axis=1)
 data = np.ones(length_test3)
 y_pred_label = coo_matrix((data, (row, col)), shape=y_pred.shape).toarray()
 print(diagnosis(test3_IC50, y_pred_label))
-
 
 print("error on train")
 size = 64
