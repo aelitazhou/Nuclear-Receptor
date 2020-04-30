@@ -1,0 +1,2 @@
+model_checkpoint_path: "/scratch/user/zhoufangtong/NRS/mutation/transfer/transfer_10/my_model"
+all_model_checkpoint_paths: "/scratch/user/zhoufangtong/NRS/mutation/transfer/transfer_10/my_model"
